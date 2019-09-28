@@ -4,7 +4,7 @@ class GraphNode {
     this.dlm = dlm;
     this.cfr = cfr;
     this.ltr = ltr;
-    console.log(`${dlm} ${cfr} ${ltr}`);
+    // console.log(`${dlm} ${cfr} ${ltr}`);
   }
   passOnSignal(signal) {
     if (signal === "dlm") {
@@ -36,19 +36,25 @@ class Graph {
     }
     this.currentNode = this.nodes[0];
     console.log(this.nodes);
-    console.log(this.currentNode);
+    // console.log(this.currentNode);
   }
 
   run(signals = []) {
+    console.log(`\n Signals: ${signals} \n`);
+    let state = "S2";
     signals.forEach(signal => {
+      state += `(${signal})`;
       const id = this.currentNode.id;
       const shift = this.currentNode.passOnSignal(signal);
       //   console.log(`${id} ${shift}`);
       //   console.log(this.nodes[id - 2 + shift]);
-      if (shift !== 0) this.currentNode = this.nodes[id - 2 + shift];
-      console.log(`Current node = ${this.currentNode.id}`);
+      if (shift !== 0) {
+        this.currentNode = this.nodes[id - 2 + shift];
+      }
+      state += ` => S${this.currentNode.id}`;
+      //   console.log(`Current node = ${this.currentNode.id}`);
     });
-    // console.log("run" + this.currentNode);
+    console.log(state);
   }
 }
 const graph = new Graph();
