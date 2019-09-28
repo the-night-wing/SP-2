@@ -38,5 +38,19 @@ class Graph {
     console.log(this.nodes);
     console.log(this.currentNode);
   }
+
+  run(signals = []) {
+    signals.forEach(signal => {
+      const id = this.currentNode.id;
+      const shift = this.currentNode.passOnSignal(signal);
+      //   console.log(`${id} ${shift}`);
+      //   console.log(this.nodes[id - 2 + shift]);
+      if (shift !== 0) this.currentNode = this.nodes[id - 2 + shift];
+      console.log(`Current node = ${this.currentNode.id}`);
+    });
+    // console.log("run" + this.currentNode);
+  }
 }
 const graph = new Graph();
+
+graph.run(["dlm", "ltr", "brv", "her", "cfr", "dlm"]);
