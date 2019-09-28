@@ -1,0 +1,9 @@
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  /* margin: 25px auto; */
+  margin-top: 25px;
+  margin-bottom: 25px;
+  /* margin-left: 50px; */
+  width: 1200px;
+}
