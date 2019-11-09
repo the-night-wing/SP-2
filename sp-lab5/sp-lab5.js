@@ -1,4 +1,4 @@
-const expression = `for i:=1 to n+m do begin d:=j;end;`;
+const expression = `for i:=a to n+m do begin end;`;
 
 const invalidVariables = [];
 const words = `and array begin continue case const div do downto else end file for function goto if in label mod nil not of or packed procedure program record repeat set then to type until var while with integer char real string boolean array file set record enumerated subrange exit sin cos`;
@@ -25,7 +25,7 @@ const integerRegex = /\d+/;
 //const floatRegex = /(\d+)(\.\d+)(e(\+|-)?(\d+))?|(\d+)(\.\d+)e(\+|-)?|(\d+)e(\+|-)?|(\d+)e(\+|-)?(\d+)?/;
 const floatRegex = /[0-9]+[.][0-9]+/g;
 const commentsRegex = /(\/\/.*\n?)|\(\*(.|\n)*?\*\)|\{(.|\n)*?\}|\{(.|\n)*|\(\*(.|\n)*/;
-const invRegex = /^[0-9]+[A-Za-z!\u0400-\u04FF]+|[A-Za-z!]+[\u0400-\u04FF!]+[A-Za-z!]+|[!\u0400-\u04FF]+[!A-Za-z]+|[!A-Za-z]+[!\u0400-\u04FF]|!+[A-Za-z]+|[A-Za-z]+!+[A-Za-z]+|[A-Za-z]+!+|[\u0400-\u04FF]+/;
+const invRegex = /[0-9]+[A-Za-z!\u0400-\u04FF]+|[A-Za-z!]+[\u0400-\u04FF!]+[A-Za-z!]+|[!\u0400-\u04FF]+[!A-Za-z]+|[!A-Za-z]+[!\u0400-\u04FF]|!+[A-Za-z]+|[A-Za-z]+!+[A-Za-z]+|[A-Za-z]+!+|[\u0400-\u04FF]+/;
 
 const lexemsMap = new Map();
 // const regx = /\d+[A-Za-z\,\.\;\:\(\)\[\]\+\+=\:=\-\-=\<\>\*\/]+/; //! Locates a word starting with a digit
@@ -69,44 +69,32 @@ findValidVariablesAndReservedWords = str => {
         // if (possVarMatch === "if")  lexemType = "T_IF"
         // if (possVarMatch === "if")  lexemType = "T_IF"
         // if (possVarMatch === "if")  lexemType = "T_IF"
-        if (
-            possVarMatch[0] === "sin" || 
-            possVarMatch[0] === "cos"
-          ) {
+        if (possVarMatch[0] === "sin" || possVarMatch[0] === "cos") {
           lexemsMap.set(possVarMatch.index, "T_MATH_OPERATION");
         }
-        if (
-          possVarMatch[0] === "for"
-        ) {
-        lexemsMap.set(possVarMatch.index, "T_FOR");
+        if (possVarMatch[0] === "for") {
+          lexemsMap.set(possVarMatch.index, "T_FOR");
         }
-        if (
-          possVarMatch[0] === "to"
-        ) {
-        lexemsMap.set(possVarMatch.index, "T_TO");
+        if (possVarMatch[0] === "to") {
+          lexemsMap.set(possVarMatch.index, "T_TO");
         }
-        if (
-          possVarMatch[0] === "if"
-        ) {
-        lexemsMap.set(possVarMatch.index, "T_IF");
+        if (possVarMatch[0] === "do") {
+          lexemsMap.set(possVarMatch.index, "T_DO");
         }
-        if (
-          possVarMatch[0] === "then"
-        ) {
-        lexemsMap.set(possVarMatch.index, "T_THEN");
+        if (possVarMatch[0] === "if") {
+          lexemsMap.set(possVarMatch.index, "T_IF");
         }
-        if (
-          possVarMatch[0] === "begin"
-        ) {
-        lexemsMap.set(possVarMatch.index, "T_BEGIN");
+        if (possVarMatch[0] === "then") {
+          lexemsMap.set(possVarMatch.index, "T_THEN");
         }
-        if (
-          possVarMatch[0] === "end"
-        ) {
-        lexemsMap.set(possVarMatch.index, "T_END");
+        if (possVarMatch[0] === "begin") {
+          lexemsMap.set(possVarMatch.index, "T_BEGIN");
         }
-        if(lexemsMap.get(possVarMatch.index) === undefined) 
-        lexemsMap.set(possVarMatch.index, "T_RESERVED_WORD");
+        if (possVarMatch[0] === "end") {
+          lexemsMap.set(possVarMatch.index, "T_END");
+        }
+        if (lexemsMap.get(possVarMatch.index) === undefined)
+          lexemsMap.set(possVarMatch.index, "T_RESERVED_WORD");
         str = str.replace(possVarMatch[0], " ".repeat(possVarMatch[0].length));
         possVarMatch = str.match(varRegex);
         flagReserved = true;
@@ -134,10 +122,8 @@ findSymbols = str => {
       lexemsMap.set(possSymbMatch.index, "T_SHIFT");
     if (["++", "--"].includes(possSymbMatch[0]))
       lexemsMap.set(possSymbMatch.index, "T_UNARY_OPERATOR");
-      if (
-        possSymbMatch[0] === "<=" ||
-        possSymbMatch[0] === ">=")
-        lexemsMap.set(possSymbMatch.index, "T_COMPARSION");
+    if (possSymbMatch[0] === "<=" || possSymbMatch[0] === ">=")
+      lexemsMap.set(possSymbMatch.index, "T_COMPARSION");
     str = str.replace(possSymbMatch[0], " ".repeat(possSymbMatch[0].length));
     possSymbMatch = str.match(doubleSymbols);
     // console.log(lexemsMap);
@@ -179,9 +165,10 @@ findSymbols = str => {
     if (
       possSymbMatch[0] === "<" ||
       possSymbMatch[0] === ">" ||
-      possSymbMatch[0] === "=")
+      possSymbMatch[0] === "="
+    )
       lexemsMap.set(possSymbMatch.index, "T_COMPARSION");
-      
+
     if (!lexemsMap.has(possSymbMatch.index))
       lexemsMap.set(possSymbMatch.index, "T_SYMBOL");
     str = str.replace(possSymbMatch[0], " ");
@@ -231,7 +218,7 @@ const lexemsIndexes = [...lexemsSortedMap.entries()].map(e => e[0]);
 const checkSyntax = (lexemsTable, index) => {
   let errorOccured = false;
 
-  if (lexemsTable[lexemsTable.length   - 1] !== "T_SEMICOLUMN") {
+  if (lexemsTable[lexemsTable.length - 1] !== "T_SEMICOLUMN") {
     errorOccured = true;
     console.log(
       `ERROR at ${
@@ -251,17 +238,10 @@ const checkSyntax = (lexemsTable, index) => {
     }
     if (
       lexemsTable[index + 1] === "T_BINARY_OPERATOR" &&
-      (
-        lexemsTable[index - 1] !== "T_TO" && 
-          (
-            (
-            lexemsTable[index - 1] !== "T_ASSIGNMENT" &&
-            (lexemsTable[index - 1] !== "T_LEFT_PARENTHESIS" &&
-            lexemsTable[index - 2] !== "T_MATH_OPERATION")
-            )
-          )
-      )
-
+      (lexemsTable[index - 1] !== "T_TO" &&
+        (lexemsTable[index - 1] !== "T_ASSIGNMENT" &&
+          (lexemsTable[index - 1] !== "T_LEFT_PARENTHESIS" &&
+            lexemsTable[index - 2] !== "T_MATH_OPERATION")))
     ) {
       // console.log(lexemsTable[index - 1] !== "T_TO" )
       errorOccured = true;
@@ -293,10 +273,12 @@ const checkSyntax = (lexemsTable, index) => {
     //     } You can't use DIGITS right after a VARIABLE`
     //   );
     // }
-
   }
   if (lexemsTable[index] === "T_LEFT_BRACKET") {
-    if (lexemsTable[index + 1] === "T_RIGHT_BRACKET") {
+    if (
+      lexemsTable[index + 1] === "T_RIGHT_BRACKET" &&
+      lexemsTable[index - 1] === "T_VARIABLE"
+    ) {
       errorOccured = true;
       console.log(
         `ERROR at index ${
@@ -524,17 +506,10 @@ const checkSyntax = (lexemsTable, index) => {
     }
     if (
       lexemsTable[index + 1] === "T_BINARY_OPERATOR" &&
-      (
-        lexemsTable[index - 1] !== "T_TO" && 
-          (
-            (
-            lexemsTable[index - 1] !== "T_ASSIGNMENT" &&
-            (lexemsTable[index - 1] !== "T_LEFT_PARENTHESIS" &&
-            lexemsTable[index - 2] !== "T_MATH_OPERATION")
-            )
-          )
-      )
-
+      (lexemsTable[index - 1] !== "T_TO" &&
+        (lexemsTable[index - 1] !== "T_ASSIGNMENT" &&
+          (lexemsTable[index - 1] !== "T_LEFT_PARENTHESIS" &&
+            lexemsTable[index - 2] !== "T_MATH_OPERATION")))
     ) {
       errorOccured = true;
       console.log(
@@ -545,46 +520,119 @@ const checkSyntax = (lexemsTable, index) => {
     }
   }
 
-  if(lexemsTable[index] === "T_FOR"){
-    if(lexemsTable[index + 1] === "T_VARIABLE"){
-      if(lexemsTable[index + 2] === "T_ASSIGNMENT"){
-        if(
-            lexemsTable[index + 3] !== "T_VARIABLE" &&
-            lexemsTable[index + 3] !== "T_INTEGER" &&
-            lexemsTable[index + 3] !== "T_LEFT_PARENTHESIS"
-          ){
-            console.log(
-              `ERROR at ${
-                lexemsIndexes[index + 3]
-              } index : You can't use it after ASSIGNMENT OPERATOR`
-            );    
+  if (lexemsTable[index] === "T_FOR") {
+    if (lexemsTable[index + 1] === "T_VARIABLE") {
+      if (lexemsTable[index + 2] === "T_ASSIGNMENT") {
+        if (
+          lexemsTable[index + 3] !== "T_VARIABLE" &&
+          lexemsTable[index + 3] !== "T_INTEGER" &&
+          lexemsTable[index + 3] !== "T_LEFT_PARENTHESIS"
+        ) {
+          errorOccured = true;
+          console.log(
+            `ERROR at ${
+              lexemsIndexes[index + 3]
+            } index : You can't use ${lexemsTable[index + 3].substring(2,30)} after ASSIGNMENT OPERATOR`
+          );
         }
-        
-        let newIndex = index + 3;
-        
-        if(lexemsTable[index + 3] === "T_LEFT_PARENTHESIS"){
-          newIndex = findParenthesisRightPair(index+3);
-        
+
+        index = index + 3;
+
+        if (lexemsTable[index + 3] === "T_LEFT_PARENTHESIS") {
+          index = findParenthesisRightPair(index + 3);
         }
-        if(
+        if (
           lexemsTable[index + 3] === "T_VARIABLE" &&
           lexemsTable[index + 4] === "T_LEFT_PARENTHESIS"
-          ){
-            newIndex = findParenthesisRightPair(index+4);
+        ) {
+          index = findParenthesisRightPair(index + 4);
         }
-        if(
+        if (
           lexemsTable[index + 3] === "T_VARIABLE" &&
           lexemsTable[index + 4] === "T_LEFT_BRACKET"
-          ){
-            newIndex = findBracketRightPair(index+4);
+        ) {
+          index = findBracketRightPair(index + 4);
         }
-        console.log(newIndex)
-        console.log(lexemsIndexes)
 
+        console.log(index);
+
+        if (lexemsTable[index + 1] !== "T_TO") {
+          errorOccured = true;
+          console.log(
+            `ERROR at ${
+              lexemsIndexes[index + 1]
+            } index : You have to place 'TO' here`
+          );
+        } else if (lexemsTable[index + 2] === "T_DO") {
+          errorOccured = true;
+          console.log(
+            `ERROR at ${
+              lexemsIndexes[index + 2]
+            } index : You have to define the end of the range after 'TO' here`
+          );
+        }else{
+          const doIndex = lexemsTable.indexOf("T_DO", index + 1);
+          checkContentBetweenToAndDo(index+1, doIndex)
+          if(doIndex !== -1){
+            if (lexemsTable[doIndex + 1] !== "T_BEGIN") {
+              errorOccured = true;
+              console.log(
+                `ERROR at ${
+                  lexemsIndexes[doIndex + 1]
+                } index : You have to place "BEGIN" after 'DO'`
+              ); 
+            } 
+          } else{
+            errorOccured = true;
+              console.log(
+                `ERROR at ${
+                  lexemsIndexes[index + 1]
+                } index : You have to place "DO" after "TO"`
+              );
+          }
+
+          // index = lexemsIndexes[lexemsTable.indexOf("T_DO", index + 1)];
+          
+          index = doIndex+2
+          // else if (
+          //   lexemsTable[index + 2] !== "T_VARIABLE" &&
+          //   lexemsTable[index + 2] !== "T_INTEGER" &&
+          //   lexemsTable[index + 2] !== "T_FLOAT" &&
+          //   lexemsTable[index + 2] !== "T_LEFT_PARENTHESIS"
+          // ) {
+          //   console.log(`object`);
+          // }
+        
+          console.log(`doIndex ${doIndex}`);
+          // index += 2;
+          console.log(index)
+        }
       }
     }
   }
 
+  // if(lexemsTable[index] === "T_IF"){
+
+  // }
+
+  if (lexemsTable[index] === "T_TO") {
+    errorOccured = true;
+    console.log(
+      `ERROR at ${lexemsIndexes[index]} index : You can't place 'TO' here`
+    );
+  }
+  if (lexemsTable[index] === "T_DO") {
+    errorOccured = true;
+    console.log(
+      `ERROR at ${lexemsIndexes[index]} index : You can't place 'DO' here`
+    );
+  }
+  if (lexemsTable[index] === "T_BEGIN") {
+    errorOccured = true;
+    console.log(
+      `ERROR at ${lexemsIndexes[index]} index : You can't place 'BEGIN' here`
+    );
+  }
   if (!errorOccured && index <= lexemsTable.length) {
     // console.log(index);
     // console.log("Moving on");
@@ -594,6 +642,21 @@ const checkSyntax = (lexemsTable, index) => {
     console.log(`\n~~~~~Anylize completed successfully~~~~~`);
   }
 };
+
+const checkContentBetweenToAndDo = (start, end) => {
+  if(lexemsTable[start + 1] === "T_LEFT_PARENTHESIS"){
+    const rightPr = findParenthesisRightPair(start + 1);
+    if (rightPr > end){
+      // return "ERROR"
+      console.log("Error")
+    }
+    else{
+      return checkContentBetweenToAndDo(start+1, rightPr)
+    }
+  }
+
+
+}
 
 findParenthesisLeftPair = index => {
   let prPairs = 1;
@@ -630,6 +693,25 @@ findParenthesisRightPair = index => {
     }
   }
   return rightPr;
+};
+
+findEnd = index => {
+  let pairs = 1;
+  let beginInd = index;
+  let endInd = 0;
+  for (let i = beginInd + 1; i < lexemsTable.length; i++) {
+    if (lexemsTable[i] === "T_BEGIN") {
+      pairs++;
+      // if (prPairs === 1) leftPr = i;
+    }
+    if (lexemsTable[i] === "T_END") {
+      if (pairs === 1) {
+        endInd = i;
+        break;
+      } else if (pairs > 1) pairs--;
+    }
+  }
+  return endInd;
 };
 
 findBracketLeftPair = index => {
