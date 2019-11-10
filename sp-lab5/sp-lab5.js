@@ -1,4 +1,8 @@
-const expression = `for i:=a to n+m do begin end;`;
+const expression = `for i :=1 to (n+m) do begin d:=j; if (n<m) then begin end; begin end else begin end; end;`;
+// const expression = `
+// For a:= 4 to y begin for g:=1 to s do begin p:=m; end; end;
+// `.toLowerCase();
+//!Should i place semicoiumn after end and before else
 
 const invalidVariables = [];
 const words = `and array begin continue case const div do downto else end file for function goto if in label mod nil not of or packed procedure program record repeat set then to type until var while with integer char real string boolean array file set record enumerated subrange exit sin cos`;
@@ -11,11 +15,13 @@ const realNumbers = [];
 const ariphmeticOperandsArr = [];
 const integerNumbers = [];
 const prohibitedSymbolsArr = [];
+let ifAmount = 0;
 
 const doubleSymbols = /(:=)|(\+=)|(-=)|(\*=)|(\/=)|(<<)|(>>)|(\+\+)|(--)|(<=)|(>=)/;
 
 // const expression = `b2*a[n]; b:=d;`;
-const symbolsRegex = /[\,\.\;\:\(\)\[\]\=\<\>\/]{1}/;
+const comparsionRegex = /[\=\<\>]{1}/ 
+const symbolsRegex = /[\,\.\;\:\(\)\[\]\/]{1}/;
 // console.log(expression.match(symbolsRegex));
 const ariphmeticOperands = /[\-\*\+\/]/;
 const varRegex = /[A-Za-z_]+[0-9_A-Za-z]*/;
@@ -87,6 +93,9 @@ findValidVariablesAndReservedWords = str => {
         if (possVarMatch[0] === "then") {
           lexemsMap.set(possVarMatch.index, "T_THEN");
         }
+        if (possVarMatch[0] === "else") {
+          lexemsMap.set(possVarMatch.index, "T_ELSE");
+        }
         if (possVarMatch[0] === "begin") {
           lexemsMap.set(possVarMatch.index, "T_BEGIN");
         }
@@ -144,6 +153,14 @@ findSymbols = str => {
     prohibitedSymbolsArr.push(possSymbMatch[0]);
     str = str.replace(possSymbMatch[0], " ");
     possSymbMatch = str.match(prohibitedSymbols);
+  }
+
+  possSymbMatch = str.match(comparsionRegex);
+  while (possSymbMatch !== null) {
+    lexemsMap.set(possSymbMatch.index, "T_COMPARSION");
+    symbols.push(possSymbMatch[0]);
+    str = str.replace(possSymbMatch[0], " ");
+    possSymbMatch = str.match(comparsionRegex);
   }
 
   possSymbMatch = str.match(symbolsRegex);
@@ -366,7 +383,8 @@ const checkSyntax = (lexemsTable, index) => {
       lexemsTable[index - 1] !== "T_LEFT_BRACKET" &&
       lexemsTable[index - 1] !== "T_VARIABLE" &&
       lexemsTable[index - 1] !== "T_MATH_OPERATION" &&
-      lexemsTable[index - 1] !== "T_LEFT_PARENTHESIS"
+      lexemsTable[index - 1] !== "T_LEFT_PARENTHESIS" &&
+      lexemsTable[index - 1] !== "T_IF"
     ) {
       errorOccured = true;
       console.log(
@@ -487,7 +505,10 @@ const checkSyntax = (lexemsTable, index) => {
   if (lexemsTable[index] === "T_COLUMN") {
   }
   if (lexemsTable[index] === "T_END") {
-    if (lexemsTable[index + 1] !== "T_SEMICOLUMN") {
+    if (
+      lexemsTable[index + 1] !== "T_SEMICOLUMN" &&
+      lexemsTable[index + 1] !== "T_ELSE" 
+      ) {
       errorOccured = true;
       console.log(
         `ERROR at ${lexemsIndexes[index]} index: You have to place a semicolumn after 'end' `
@@ -521,6 +542,7 @@ const checkSyntax = (lexemsTable, index) => {
   }
 
   if (lexemsTable[index] === "T_FOR") {
+    console.log()
     if (lexemsTable[index + 1] === "T_VARIABLE") {
       if (lexemsTable[index + 2] === "T_ASSIGNMENT") {
         if (
@@ -572,7 +594,11 @@ const checkSyntax = (lexemsTable, index) => {
           );
         }else{
           const doIndex = lexemsTable.indexOf("T_DO", index + 1);
-          checkContentBetweenToAndDo(index+1, doIndex)
+          const contentBetweenToAndDo = checkContentBetweenToAndDo(index+2, doIndex);
+          if(contentBetweenToAndDo){
+            errorOccured = true;
+            console.log(contentBetweenToAndDo)
+          }
           if(doIndex !== -1){
             if (lexemsTable[doIndex + 1] !== "T_BEGIN") {
               errorOccured = true;
@@ -603,17 +629,70 @@ const checkSyntax = (lexemsTable, index) => {
           //   console.log(`object`);
           // }
         
-          console.log(`doIndex ${doIndex}`);
+          // console.log(`doIndex ${doIndex}`);
           // index += 2;
-          console.log(index)
+          // console.log(index)
         }
+      }else{
+        errorOccured = true;
+        console.log(
+          `ERROR at ${lexemsIndexes[index]} index : You have to initialize iterator's value here`
+        );
       }
+    }else{
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index]} index : You have to place iterator here`
+      );
     }
   }
 
-  // if(lexemsTable[index] === "T_IF"){
+  if(lexemsTable[index] === "T_IF"){
+    ifAmount++;
+    if(lexemsTable[index + 1] === "T_LEFT_PARENTHESIS"){
+      const rightPr = findParenthesisRightPair(index + 1);
+      index = rightPr;
+      if(lexemsTable[index + 1] === "T_THEN"){
+        if(lexemsTable[index + 2] === "T_BEGIN"){
+          index+=2
+        }else{
+          errorOccured = true;
+          console.log(
+            `ERROR at ${lexemsIndexes[index+2]} index : You have to place 'BEGIN' here`
+          );
+        }
+      }else{
+        errorOccured = true;
+        console.log(
+          `ERROR at ${lexemsIndexes[index+1]} index : You have to place 'THEN' here`
+        );
+      }
+    }else{
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index+1]} index : You have to wrap your condition in parenthesis`
+      );
+    }
+    //! Check what's between if and then
+    //? how to check if else is after the right end
+  }
 
-  // }
+  if (lexemsTable[index] === "T_ELSE") {
+    if (ifAmount > 0) {
+      
+    }else{
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index]} index : You have to use 'IF' before 'ELSE'`
+      );
+    }
+    if (lexemsTable[index - 1] !== "T_END") {
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index]} index : You can't use 'ELSE' here`
+      );
+    }
+  }
 
   if (lexemsTable[index] === "T_TO") {
     errorOccured = true;
@@ -627,35 +706,46 @@ const checkSyntax = (lexemsTable, index) => {
       `ERROR at ${lexemsIndexes[index]} index : You can't place 'DO' here`
     );
   }
-  if (lexemsTable[index] === "T_BEGIN") {
-    errorOccured = true;
-    console.log(
-      `ERROR at ${lexemsIndexes[index]} index : You can't place 'BEGIN' here`
-    );
-  }
+  // if (lexemsTable[index] === "T_BEGIN") {
+  //   errorOccured = true;
+  //   console.log(
+  //     `ERROR at ${lexemsIndexes[index]} index : You can't place 'BEGIN' here`
+  //   );
+  // }
   if (!errorOccured && index <= lexemsTable.length) {
     // console.log(index);
     // console.log("Moving on");
     checkSyntax(lexemsTable, index + 1);
   }
   if (!errorOccured && index > lexemsTable.length) {
-    console.log(`\n~~~~~Anylize completed successfully~~~~~`);
+    console.log(`\n~~~~~~~~~~Anylize completed successfully~~~~~~~~~~`);
   }
 };
 
+
 const checkContentBetweenToAndDo = (start, end) => {
-  if(lexemsTable[start + 1] === "T_LEFT_PARENTHESIS"){
-    const rightPr = findParenthesisRightPair(start + 1);
+  if(lexemsTable[start] === "T_LEFT_PARENTHESIS"){
+    const rightPr = findParenthesisRightPair(start);
     if (rightPr > end){
       // return "ERROR"
-      console.log("Error")
+      return `Incorrectly placed parenthesis at ${lexemsIndexes[rightPr]}`;
     }
     else{
       return checkContentBetweenToAndDo(start+1, rightPr)
+    } 
+  }else{
+    for (let i = start; i < end; i++) {
+      if (
+        lexemsTable[i] === "T_ASSIGNMENT" ||
+        lexemsTable[i] === "T_SYMBOL" ||
+        lexemsTable[i] === "T_COLUMN" ||
+        lexemsTable[i] === "T_SEMICOLUMN"
+      ) {
+        return `Prohibited symbols between 'TO' and 'DO', at lexems index ${lexemsIndexes[i]}`;
+      }
     }
   }
-
-
+  return 0
 }
 
 findParenthesisLeftPair = index => {
