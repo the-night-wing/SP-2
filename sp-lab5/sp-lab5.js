@@ -1,4 +1,4 @@
-const expression = `for i :=1 to a do begin d:=j; if (n<m) then begin end; end;`;
+const expression = `for i :=1 to n+m do begin d:=j; if (n<m) then begin end; end;`;
 // const expression = `
 // For a:= 4 to y begin for g:=1 to s do begin p:=m; end; end;
 // `.toLowerCase();
@@ -559,26 +559,30 @@ const checkSyntax = (lexemsTable, index) => {
         
         
         // index = index + 3;
-        const cameTo = false;
         if (lexemsTable[index + 3] === "T_LEFT_PARENTHESIS") {
           index = findParenthesisRightPair(index + 3);
-          cameTo = true;
         }else if (
           lexemsTable[index + 3] === "T_VARIABLE" &&
           lexemsTable[index + 4] === "T_LEFT_PARENTHESIS"
         ) {
           index = findParenthesisRightPair(index + 4);
-          cameTo = true;
         } else if (
           lexemsTable[index + 3] === "T_VARIABLE" &&
           lexemsTable[index + 4] === "T_LEFT_BRACKET"
         ) {
           index = findBracketRightPair(index + 4);
-          cameTo = true;
+        } else {
+          const toIndex = lexemsTable.indexOf("T_TO", index);
+          const contentBetweenForAndTo = checkContentBetweenToAndDo(index+3, toIndex, false);
+          if(contentBetweenForAndTo){
+            errorOccured = true;
+            console.log(contentBetweenForAndTo)
+          }
+          index = toIndex - 1;
         }
 
 
-        if (lexemsTable[index + 1] !== "T_TO" && cameTo === true;) {
+        if (lexemsTable[index + 1] !== "T_TO") {
           console.log(index);
           errorOccured = true;
           console.log(
@@ -779,7 +783,7 @@ const findClosestThen = start => {
 //!  take closest begin after T_THEN
 //!  find corresponding T_END and only after that should be our else
 
-const checkContentBetweenToAndDo = (start, end) => {
+const checkContentBetweenToAndDo = (start, end, mode=true) => {
   if(lexemsTable[start] === "T_LEFT_PARENTHESIS"){
     const rightPr = findParenthesisRightPair(start);
     if (rightPr > end){
@@ -797,7 +801,9 @@ const checkContentBetweenToAndDo = (start, end) => {
         lexemsTable[i] === "T_COLUMN" ||
         lexemsTable[i] === "T_SEMICOLUMN"
       ) {
-        return `Prohibited symbols between 'TO' and 'DO', at lexems index ${lexemsIndexes[i]}`;
+        return `
+        Prohibited symbols between ${mode ? 'TO' : 'FOR'}  and ${mode ? 'DO' : 'TO'}, at lexems index ${lexemsIndexes[i]}
+        `;
       }
     }
   }
