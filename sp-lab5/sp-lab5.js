@@ -1,4 +1,4 @@
-const expression = `for i :=1 to n+m do begin d:=j; if (n<m) then begin end; end;`;
+const expression = `for i :=1 to to n+m do begin d:=j; if (n<m) then begin end; end;`;
 // const expression = `
 // For a:= 4 to y begin for g:=1 to s do begin p:=m; end; end;
 // `.toLowerCase();
@@ -16,6 +16,8 @@ const ariphmeticOperandsArr = [];
 const integerNumbers = [];
 const prohibitedSymbolsArr = [];
 let ifAmount = 0;
+
+//!Invalid variable regex works incorrectly
 
 const doubleSymbols = /(:=)|(\+=)|(-=)|(\*=)|(\/=)|(<<)|(>>)|(\+\+)|(--)|(<=)|(>=)/;
 
@@ -573,7 +575,7 @@ const checkSyntax = (lexemsTable, index) => {
           index = findBracketRightPair(index + 4);
         } else {
           const toIndex = lexemsTable.indexOf("T_TO", index);
-          const contentBetweenForAndTo = checkContentBetweenToAndDo(index+3, toIndex, false);
+          const contentBetweenForAndTo = checkContentBetweenKeywords(index+3, toIndex, 0);
           if(contentBetweenForAndTo){
             errorOccured = true;
             console.log(contentBetweenForAndTo)
@@ -597,9 +599,16 @@ const checkSyntax = (lexemsTable, index) => {
               lexemsIndexes[index + 2]
             } index : You have to define the end of the range after 'TO' here`
           );
+        } else if (lexemsTable[index + 2] === "T_TO") {
+          errorOccured = true;
+          console.log(
+            `ERROR at ${
+              lexemsIndexes[index + 2]
+            } index : You can't place another 'TO' after 'TO' here`
+          );
         }else{
           const doIndex = lexemsTable.indexOf("T_DO", index + 1);
-          const contentBetweenToAndDo = checkContentBetweenToAndDo(index+2, doIndex);
+          const contentBetweenToAndDo = checkContentBetweenKeywords(index+2, doIndex, 1);
           if(contentBetweenToAndDo){
             errorOccured = true;
             console.log(contentBetweenToAndDo)
@@ -656,7 +665,12 @@ const checkSyntax = (lexemsTable, index) => {
     ifAmount++;
     if(lexemsTable[index + 1] === "T_LEFT_PARENTHESIS"){
       const rightPr = findParenthesisRightPair(index + 1);
+      const contentBetweenIfAndThen = checkContentBetweenKeywords(index+1, rightPr, 2);
       index = rightPr;
+      if(contentBetweenIfAndThen){
+        errorOccured = true;
+        console.log(contentBetweenIfAndThen)
+      }
       if(lexemsTable[index + 1] === "T_THEN"){
         if(lexemsTable[index + 2] === "T_BEGIN"){
           index+=2
@@ -672,7 +686,13 @@ const checkSyntax = (lexemsTable, index) => {
           `ERROR at ${lexemsIndexes[index+1]} index : You have to place 'THEN' here`
         );
       }
-    }else{
+    }else if (lexemsTable[index + 1] === "T_IF"){
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index+1]} index : You can't place another 'IF' here`
+      );
+    }
+    else{
       errorOccured = true;
       console.log(
         `ERROR at ${lexemsIndexes[index+1]} index : You have to wrap your condition in parenthesis`
@@ -783,7 +803,16 @@ const findClosestThen = start => {
 //!  take closest begin after T_THEN
 //!  find corresponding T_END and only after that should be our else
 
-const checkContentBetweenToAndDo = (start, end, mode=true) => {
+const checkContentBetweenKeywords = (start, end, mode=0) => {
+  let keyword1 = 'FOR'
+  let keyword2 = 'TO'
+  if(mode === 1){
+    keyword1 = 'TO'
+    keyword2 = 'DO'
+  }else if(mode === 2){
+    keyword1 = 'IF'
+    keyword2 = 'THEN'
+  }
   if(lexemsTable[start] === "T_LEFT_PARENTHESIS"){
     const rightPr = findParenthesisRightPair(start);
     if (rightPr > end){
@@ -791,7 +820,7 @@ const checkContentBetweenToAndDo = (start, end, mode=true) => {
       return `Incorrectly placed parenthesis at ${lexemsIndexes[rightPr]}`;
     }
     else{
-      return checkContentBetweenToAndDo(start+1, rightPr)
+      return checkContentBetweenKeywords(start+1, rightPr)
     } 
   }else{
     for (let i = start; i < end; i++) {
@@ -802,7 +831,7 @@ const checkContentBetweenToAndDo = (start, end, mode=true) => {
         lexemsTable[i] === "T_SEMICOLUMN"
       ) {
         return `
-        Prohibited symbols between ${mode ? 'TO' : 'FOR'}  and ${mode ? 'DO' : 'TO'}, at lexems index ${lexemsIndexes[i]}
+        Prohibited symbols between ${keyword1}  and ${keyword2}, at lexems index ${lexemsIndexes[i]}
         `;
       }
     }
