@@ -1,4 +1,4 @@
-const expression = `for i :=1 to (n+m) do begin d:=j; if (n<m) then begin end; begin end else begin end; end;`;
+const expression = `for i :=1 to a do begin d:=j; if (n<m) then begin end; end;`;
 // const expression = `
 // For a:= 4 to y begin for g:=1 to s do begin p:=m; end; end;
 // `.toLowerCase();
@@ -542,7 +542,6 @@ const checkSyntax = (lexemsTable, index) => {
   }
 
   if (lexemsTable[index] === "T_FOR") {
-    console.log()
     if (lexemsTable[index + 1] === "T_VARIABLE") {
       if (lexemsTable[index + 2] === "T_ASSIGNMENT") {
         if (
@@ -557,28 +556,30 @@ const checkSyntax = (lexemsTable, index) => {
             } index : You can't use ${lexemsTable[index + 3].substring(2,30)} after ASSIGNMENT OPERATOR`
           );
         }
-
-        index = index + 3;
-
+        
+        
+        // index = index + 3;
+        const cameTo = false;
         if (lexemsTable[index + 3] === "T_LEFT_PARENTHESIS") {
           index = findParenthesisRightPair(index + 3);
-        }
-        if (
+          cameTo = true;
+        }else if (
           lexemsTable[index + 3] === "T_VARIABLE" &&
           lexemsTable[index + 4] === "T_LEFT_PARENTHESIS"
         ) {
           index = findParenthesisRightPair(index + 4);
-        }
-        if (
+          cameTo = true;
+        } else if (
           lexemsTable[index + 3] === "T_VARIABLE" &&
           lexemsTable[index + 4] === "T_LEFT_BRACKET"
         ) {
           index = findBracketRightPair(index + 4);
+          cameTo = true;
         }
 
-        console.log(index);
 
-        if (lexemsTable[index + 1] !== "T_TO") {
+        if (lexemsTable[index + 1] !== "T_TO" && cameTo === true;) {
+          console.log(index);
           errorOccured = true;
           console.log(
             `ERROR at ${
@@ -689,7 +690,32 @@ const checkSyntax = (lexemsTable, index) => {
     if (lexemsTable[index - 1] !== "T_END") {
       errorOccured = true;
       console.log(
-        `ERROR at ${lexemsIndexes[index]} index : You can't use 'ELSE' here`
+        `ERROR at ${lexemsIndexes[index]} index : You have to use 'ELSE' after 'END'`
+      );
+    }
+
+    const closestIf = findClosestLeftIf(index);
+    const closestThen = findClosestThen(closestIf);
+    const closestBegin = closestThen + 1;
+    const correspondingEnd = findEnd(closestBegin);
+    // console.log(`------------`)
+    // console.log(closestIf);
+    // console.log(closestThen);
+    // console.log(closestBegin);
+    // console.log(correspondingEnd);
+    // console.log(`------------`)
+    if (index - 1 !== correspondingEnd){
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index]} index : You have to use 'ELSE' after 'IF' construction`
+      );
+    }
+
+    
+    if (lexemsTable[index + 1] !== "T_BEGIN") {
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index]} index : You have to open new logic statement after 'ELSE'`
       );
     }
   }
@@ -722,6 +748,36 @@ const checkSyntax = (lexemsTable, index) => {
   }
 };
 
+const findClosestLeftIf = start => {
+  let if_else_pairs = 1;
+  for(let i = start + 1; i > 0; i--){
+    if(lexemsTable[i] === "T_ELSE"){
+      if_else_pairs++
+    }
+    if(lexemsTable[i] === "T_IF"){
+      if(if_else_pairs !== 0){
+        if_else_pairs--
+      }else{
+        return i
+      }
+    }
+  }
+  return 0
+}
+
+const findClosestThen = start => {
+  for(let i = start; i < lexemsTable.length; i++){
+    if(lexemsTable[i] === "T_THEN"){
+      return i
+    }
+  }
+  return 0
+}
+
+
+//!  find closest left if
+//!  take closest begin after T_THEN
+//!  find corresponding T_END and only after that should be our else
 
 const checkContentBetweenToAndDo = (start, end) => {
   if(lexemsTable[start] === "T_LEFT_PARENTHESIS"){
