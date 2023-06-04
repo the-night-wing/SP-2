@@ -1,0 +1,1 @@
+program newprog; var c: single; a : array [1..3] of single; n,d, c, b:word; begin b:=2*a[n]; b:=d end.

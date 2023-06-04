@@ -1,0 +1,16 @@
+﻿  Assembling AddTwo.asm...
+AddTwo.asm(33): error A2008: syntax error : .
+AddTwo.asm(35): error A2008: syntax error : .
+AddTwo.asm(37): error A2008: syntax error : .
+AddTwo.asm(39): error A2008: syntax error : .
+AddTwo.asm(15): error A2006: undefined symbol : a
+AddTwo.asm(17): error A2006: undefined symbol : _a
+AddTwo.asm(19): error A2006: undefined symbol : _a
+AddTwo.asm(21): error A2006: undefined symbol : _b
+AddTwo.asm(22): error A2006: undefined symbol : _n
+AddTwo.asm(23): error A2006: undefined symbol : _d
+AddTwo.asm(24): error A2006: undefined symbol : _a
+AddTwo.asm(25): error A2006: undefined symbol : _a
+AddTwo.asm(27): error A2006: undefined symbol : _b
+AddTwo.asm(40): warning A4023: with /coff switch, leading underscore required for start address : main
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\BuildCustomizations\masm.targets(70,5): error MSB3721: выход из команды "ml.exe /c /nologo /Sg /Zi /Fo"Debug\AddTwo.obj" /Fl"Project.lst" /I "c:\Irvine" /W3 /errorReport:prompt  /TaAddTwo.asm" с кодом "1".

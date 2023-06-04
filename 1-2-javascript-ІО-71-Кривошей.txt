@@ -1,0 +1,390 @@
+import React, { Component } from "react";
+import ReactDOM from 'react-dom';
+
+//
+// Лаб. робота написана на JavaScript з використанням бібліотеки React. 
+// Використання бібліотеки вимагає використання купи папок і файлів (модулі, конфігурації, стилі, збиральник проектів Webpack та інше), текст яких не присутній у цьому файлі
+// 
+
+
+export default class DataBase {
+  _array = [];
+  _struct = [];
+  _matches = [];
+  _queue = 0;
+	
+	//Генерація ІД для елемента структури
+  generateId = () => {
+    return `f${(~~(Math.random() * 1e8)).toString(16)}`;
+  };
+
+	//Геттер елемента
+  getElement = index => {
+    if (this._array[index]) return this._array[index];
+    else console.log("There's no such element");
+  };
+	//Генерація елемента
+  generateElement = value => {
+    return {
+      id: this.generateId(),
+      value
+    };
+  };
+	//Генерація структури
+  generateStruct = () => {
+    this._struct = this._array.map(value => this.generateElement(value));
+    console.log(this._struct);
+  };
+	//Видалення елемента
+  deleteElement = id => {
+    const index = this._struct.findIndex(el => el.id === id);
+    console.log(index);
+    this._struct.splice(index, 1);
+    // console.log(this._struct);
+  };
+	Додання елемента
+  addElement = value => {
+    this._array.push(value);
+    this._array = this._array.sort();
+    this.generateStruct();
+  };
+	//Геттер структури
+  get struct() {
+    return this._struct;
+  }
+	//Встановлення масиву слів
+  setArray = array => {
+    this._array = array.sort();
+    this.resetLastMatches();
+    this._queue = 0;
+    this.generateStruct();
+  };
+	//Геттер масиву слів
+  get array() {
+    const array = this._struct.map(el => el.value);
+    return this._array;
+  }
+	//Вивід останніх співпадінь по словах у консоль
+  showLastMatches = () => {
+    console.log(this._matches);
+  };
+
+	//Функція виводу співпадіння враховуючи варіант(черга)
+  showLastMatch = () => {
+    const maxMatches = Math.max(...this._matches);
+    const resultsAmount = this._matches.filter(el => el === maxMatches).length;
+
+    if (maxMatches === 0) {
+      console.log("No matches");
+      return -1;
+    }
+
+    if (this._queue > resultsAmount) this._queue = 1;
+
+    const cycle = resultsAmount === 1 ? 1 : this._queue;
+
+    let result = "";
+    let shift = 0;
+
+    for (let i = 0; i < cycle; i++) {
+      result = this._matches.indexOf(maxMatches, shift);
+      shift = result + 1;
+    }
+    console.log(`${result} result`);
+
+    console.log(`${this._array[result]}`);
+
+    return `${this._array[result]} (${this._matches[result]} matches)`;
+  };
+	
+	//Обнулення масиву співпадінь
+  resetLastMatches = () => {
+    this._matches = new Array(this._array.length).fill(0);
+  };
+
+	//Підрахування кількості співпадінь по літерах
+  findLetterMatches = specimenLetter => {
+    this._array.forEach((word, index) => {
+      word.split("").forEach(letter => {
+        if (letter === specimenLetter) this._matches[index]++;
+      });
+    });
+  };
+
+	//Функція початку пошуку співпадінь по літерах
+  findMatches = specimen => {
+    this.resetLastMatches();
+    specimen.split("").forEach(specimenLetter => {
+      this.findLetterMatches(specimenLetter);
+    });
+    if (this._queue === this.array.length) this._queue = 0;
+    else this._queue++;
+  };
+
+	//Бінарний пошук слова
+  binarySearch = value => {
+    // ініціалізація даних(початок, кінець та середина)
+    let start = 0;
+    let stop = this._array.length - 1;
+    let middle = Math.floor((start + stop) / 2);
+
+    // While the middle is not what we're looking for and the list does not have a single item
+    while (this._array[middle] !== value && start < stop) {
+      if (value < this._array[middle]) {
+        stop = middle - 1;
+      } else {
+        start = middle + 1;
+      }
+
+      // перерахування середини
+      middle = Math.floor((start + stop) / 2);
+    }
+
+    // якщо середина це те, що ми шукаємо - повертаємо індекс, інакше -1
+    return this._array[middle] !== value ? -1 : middle;
+  };
+
+	//Лінійний пошук слова
+  linearSearch = specimen => {
+    let result = -1;
+    this._array.forEach((word, index) => {
+      if (word === specimen) result = index;
+    });
+    return result;
+  };
+}
+
+
+
+	//Далі йде візуальна частина
+
+
+class App extends Component {
+  dataStruct = new DataBase();
+
+  componentDidMount() {
+    this.setState({
+      array: this.dataStruct.array
+    });
+  }
+
+  onSpecimenChange = e => {
+    this.setState({
+      specimen: e.target.value
+    });
+  };
+
+  onArrayValueChange = e => {
+    let txt = e.target.value;
+    let array = txt.split(", ");
+    console.log(array);
+    this.setState({
+      arrayValue: txt,
+      array
+    });
+  };
+
+  onItemAdd = e => {
+    e.preventDefault();
+    this.dataStruct.addElement(this.state.newElement);
+    this.forceUpdate();
+  };
+
+  onNewElementChange = e => {
+    this.setState({
+      newElement: e.target.value
+    });
+  };
+
+
+	//Початок пошуку по літерах
+  startSearch = e => {
+    const { specimen } = this.state;
+    e.preventDefault();
+    this.dataStruct.findMatches(specimen);
+    this.dataStruct.showLastMatches();
+    const searchResult = this.dataStruct.showLastMatch();
+    this.setState({
+      searchResult: !(searchResult + 1) ? "No Matches" : searchResult
+    });
+  };
+
+	//Початок бінарного пошуку слова
+  binarySearch = e => {
+    e.preventDefault();
+    const { specimen } = this.state;
+    const searchResult = this.dataStruct.binarySearch(specimen);
+    this.setState({
+      searchResult: !(searchResult + 1) ? "No Matches" : searchResult
+    });
+  };
+
+	//Початок лінійного пошуку слова
+  linearSearch = e => {
+    e.preventDefault();
+    const { specimen } = this.state;
+    const searchResult = this.dataStruct.linearSearch(specimen);
+    this.setState({
+      searchResult: !(searchResult + 1) ? "No Matches" : searchResult
+    });
+  };
+	
+	//Встановлення масиву с поля вводу
+  setData = e => {
+    e.preventDefault();
+    const { array, arrayValue } = this.state;
+    array.length === 0
+      ? this.dataStruct.setArray(arrayValue.split(", "))
+      : this.dataStruct.setArray(array);
+
+    this.dataStruct.showArray();
+    this.forceUpdate();
+  };
+
+  state = {
+    newElement: "",
+    specimen: "",
+    array: this.dataStruct.array,
+    arrayValue:
+      "Mary, Elsa, Viky, Gordon, Charlie, Leo, Grace, Jeremy, Freddie, Harry",
+    searchResult: "Start a search"
+  };
+
+  render() {
+    const { arrayValue, searchResult } = this.state;
+
+    return (
+      <div className="App">
+	  
+	  //Форма встановлення масиву слів
+        <form className="item-add-form" onSubmit={this.setData}>
+          <input
+            type="text"
+            onChange={this.onArrayValueChange}
+            value={arrayValue}
+            placeholder="Enter array"
+          />
+          <button className="btn btn-outline-secondary" onClick={this.setData}>
+            Set Array
+          </button>
+        </form>
+
+        <DataView
+          data={this.dataStruct.struct}
+          onDeleted={id => {
+            this.dataStruct.deleteElement(id);
+            this.forceUpdate();
+          }}
+        />
+        <FilterForm
+          onSpecimenChange={this.onSpecimenChange}
+          onBinary={this.binarySearch}
+          onLinear={this.linearSearch}
+          onSearch={this.startSearch}
+        />
+        <AddItemForm
+          onSubmit={this.onItemAdd}
+          onLabelChange={this.onNewElementChange}
+        />
+        <p>{`Search Result : ${searchResult}`}</p>
+      </div>
+    );
+  }
+}
+
+
+
+	//Обрамлення для масиву елементів
+DataView = ({ data, onDeleted }) => {
+  const datas = data.map(el => (
+    <Cell
+      key={el.id}
+      onDeleted={() => onDeleted(el.id)}
+      label={el.value}
+    ></Cell>
+  ));
+
+  return <div className="container">{datas}</div>;
+};
+
+
+	//Форма пошуку
+
+const FilterForm = ({ onSpecimenChange, onBinary, onSearch, onLinear }) => {
+  return (
+    <form className="item-add-form filter" onSubmit={e => e.preventDefault()}>
+      <input
+        type="text"
+        onChange={onSpecimenChange}
+        placeholder={"Enter search key"}
+      />
+      <button
+        className="btn btn-outline-secondary"
+        title="Binary Search"
+        onClick={onBinary}
+      >
+        Binary Search
+      </button>
+      <button
+        className="btn btn-outline-secondary"
+        title="Search For Matches"
+        onClick={onSearch}
+      >
+        Search For Matches
+      </button>
+      <button
+        className="btn btn-outline-secondary"
+        title="Linear Search"
+        onClick={onLinear}
+      >
+        Linear Search
+      </button>
+    </form>
+  );
+};
+
+
+
+
+	//Обрамлення елемента
+const Cell = ({ label, onDeleted }) => {
+  return (
+    <div className="cell">
+      {label}
+      <button
+        type="button"
+        className="btn btn-outline-danger btn-sm"
+        onClick={onDeleted}
+      >
+        <i className="fa fa-trash-o" />
+      </button>
+    </div>
+  );
+};
+
+
+
+	//Форма додавання нового елемента
+
+const AddItemForm = ({ onLabelChange, onSubmit }) => {
+  return (
+    <form className="item-add-form adding" onSubmit={onSubmit}>
+      <input
+        type="text"
+        onChange={onLabelChange}
+        placeholder={"Enter Name of The Item"}
+      />
+      <button className="btn btn-outline-secondary" title="Add Item">
+        Add Item
+      </button>
+    </form>
+  );
+};
+
+
+
+
+ReactDOM.render(<App />, document.getElementById('root'));
+
+
+

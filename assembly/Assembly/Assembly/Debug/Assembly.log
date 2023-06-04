@@ -1,0 +1,5 @@
+﻿  Source.cpp
+E:\Programming\SP-2\assembly\Assembly\Assembly\Source.cpp(7,62): warning C4101: CONSTANT_5: неиспользованная локальная переменная
+E:\Programming\SP-2\assembly\Assembly\Assembly\Source.cpp(7,50): warning C4101: CONSTANT_4: неиспользованная локальная переменная
+E:\Programming\SP-2\assembly\Assembly\Assembly\Source.cpp(7,8): warning C4101: n: неиспользованная локальная переменная
+  Assembly.vcxproj -> E:\Programming\SP-2\assembly\Assembly\Debug\Assembly.exe

@@ -1,6 +1,6 @@
-const expression = `for i :=1 to to n+m do begin d:=j; if (n<m) then begin end; end;`;
+const expression = `For a := 4 to y do begin for g:=1 to s do begin p:=m; end; end;`.toLowerCase()
 // const expression = `
-// For a:= 4 to y begin for g:=1 to s do begin p:=m; end; end;
+// for i =1 to n+m do begin d:=j; if (n=m) then begin a:=5 end end. 
 // `.toLowerCase();
 //!Should i place semicoiumn after end and before else
 
@@ -26,14 +26,16 @@ const comparsionRegex = /[\=\<\>]{1}/
 const symbolsRegex = /[\,\.\;\:\(\)\[\]\/]{1}/;
 // console.log(expression.match(symbolsRegex));
 const ariphmeticOperands = /[\-\*\+\/]/;
-const varRegex = /[A-Za-z_]+[0-9_A-Za-z]*/;
+// const varRegex = /[A-Za-z_]+[0-9_A-Za-z]*/;
+const varRegex = /(?<=[^\w])[A-Z]+[A-Z0-9_]*|^[A-Z]+[A-Z0-9_]*/i
 const prohibitedSymbols = /[&$#@!]/;
 // const numberRegex = /\d+|(\d+)(\.\d+)(e(\+|-)?(\d+))?|(\d+)(\.\d+)e(\+|-)?|(\d+)e(\+|-)?|(\d+)(e(\+|-)?(\d+))?/;
 const integerRegex = /\d+/;
 //const floatRegex = /(\d+)(\.\d+)(e(\+|-)?(\d+))?|(\d+)(\.\d+)e(\+|-)?|(\d+)e(\+|-)?|(\d+)e(\+|-)?(\d+)?/;
 const floatRegex = /[0-9]+[.][0-9]+/g;
 const commentsRegex = /(\/\/.*\n?)|\(\*(.|\n)*?\*\)|\{(.|\n)*?\}|\{(.|\n)*|\(\*(.|\n)*/;
-const invRegex = /[0-9]+[A-Za-z!\u0400-\u04FF]+|[A-Za-z!]+[\u0400-\u04FF!]+[A-Za-z!]+|[!\u0400-\u04FF]+[!A-Za-z]+|[!A-Za-z]+[!\u0400-\u04FF]|!+[A-Za-z]+|[A-Za-z]+!+[A-Za-z]+|[A-Za-z]+!+|[\u0400-\u04FF]+/;
+// const invRegex = /[0-9]+[A-Za-z!\u0400-\u04FF]+|[A-Za-z!]+[\u0400-\u04FF!]+[A-Za-z!]+|[!\u0400-\u04FF]+[!A-Za-z]+|[!A-Za-z]+[!\u0400-\u04FF]|!+[A-Za-z]+|[A-Za-z]+!+[A-Za-z]+|[A-Za-z]+!+|[\u0400-\u04FF]+/;
+const invRegex = /(?<=[^\w])[0-9]+[A-Z]+|^[0-9]+[A-Z]+/i
 
 const lexemsMap = new Map();
 // const regx = /\d+[A-Za-z\,\.\;\:\(\)\[\]\+\+=\:=\-\-=\<\>\*\/]+/; //! Locates a word starting with a digit
@@ -179,8 +181,10 @@ findSymbols = str => {
       lexemsMap.set(possSymbMatch.index, "T_RIGHT_BRACKET");
     if (possSymbMatch[0] === ":")
       lexemsMap.set(possSymbMatch.index, "T_COLUMN");
-    if (possSymbMatch[0] === ";")
-      lexemsMap.set(possSymbMatch.index, "T_SEMICOLUMN");
+      if (possSymbMatch[0] === ";")
+        lexemsMap.set(possSymbMatch.index, "T_SEMICOLUMN");
+        if (possSymbMatch[0] === ".")
+          lexemsMap.set(possSymbMatch.index, "T_DOT");
     if (
       possSymbMatch[0] === "<" ||
       possSymbMatch[0] === ">" ||
@@ -237,7 +241,12 @@ const lexemsIndexes = [...lexemsSortedMap.entries()].map(e => e[0]);
 const checkSyntax = (lexemsTable, index) => {
   let errorOccured = false;
 
-  if (lexemsTable[lexemsTable.length - 1] !== "T_SEMICOLUMN") {
+  if (
+      lexemsTable[lexemsTable.length - 1] !== "T_SEMICOLUMN" &&(
+      lexemsTable[lexemsTable.length - 2] !== "T_END" ||
+      lexemsTable[lexemsTable.length - 1] !== "T_DOT" )
+      
+      ) {
     errorOccured = true;
     console.log(
       `ERROR at ${
@@ -247,6 +256,18 @@ const checkSyntax = (lexemsTable, index) => {
   }
 
   if (lexemsTable[index] === "T_VARIABLE") {
+    if (
+      lexemsTable[index + 1] === "T_IF" ||
+      lexemsTable[index + 1] === "T_BEGIN" ||
+      lexemsTable[index + 1] === "T_END"
+    ) {
+      errorOccured = true;
+      console.log(
+        `ERROR at ${
+          lexemsIndexes[index + 1]
+        } You can't place it after variable`
+      );
+    }
     if (lexemsTable[index + 1] === "T_VARIABLE") {
       errorOccured = true;
       console.log(
@@ -506,10 +527,24 @@ const checkSyntax = (lexemsTable, index) => {
   }
   if (lexemsTable[index] === "T_COLUMN") {
   }
-  if (lexemsTable[index] === "T_END") {
+  if (
+    lexemsTable[index] === "T_END"
+    ) {
+    if (
+      lexemsTable[index + 1] === "T_DOT" &&
+      lexemsTable[index + 2] !== undefined
+
+      ) {
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index]} index: You have to place a semicolumn after not last 'end' `
+      );
+    }  
     if (
       lexemsTable[index + 1] !== "T_SEMICOLUMN" &&
-      lexemsTable[index + 1] !== "T_ELSE" 
+      lexemsTable[index + 1] !== "T_END" &&
+      lexemsTable[index + 1] !== "T_DOT"
+       
       ) {
       errorOccured = true;
       console.log(
@@ -608,20 +643,37 @@ const checkSyntax = (lexemsTable, index) => {
           );
         }else{
           const doIndex = lexemsTable.indexOf("T_DO", index + 1);
+          
           const contentBetweenToAndDo = checkContentBetweenKeywords(index+2, doIndex, 1);
           if(contentBetweenToAndDo){
             errorOccured = true;
             console.log(contentBetweenToAndDo)
           }
-          if(doIndex !== -1){
-            if (lexemsTable[doIndex + 1] !== "T_BEGIN") {
+          if (lexemsTable[doIndex+1] === "T_SEMICOLUMN") {
+            console.log(`object`)
+            errorOccured = true;
+            console.log(
+              `ERROR at ${lexemsIndexes[doIndex+1]} index : You can't place ";" here`
+            );
+          }
+          if (lexemsTable[doIndex+1] === "T_BEGIN") {
+            if (lexemsTable[doIndex+2] === "T_SEMICOLUMN") {
+              console.log(`object`)
               errorOccured = true;
               console.log(
-                `ERROR at ${
-                  lexemsIndexes[doIndex + 1]
-                } index : You have to place "BEGIN" after 'DO'`
-              ); 
-            } 
+                `ERROR at ${lexemsIndexes[doIndex+2]} index : You can't place ";" here`
+              );
+            }
+          }
+          if(doIndex !== -1){
+            // if (lexemsTable[doIndex + 1] !== "T_BEGIN") {
+            //   errorOccured = true;
+            //   console.log(
+            //     `ERROR at ${
+            //       lexemsIndexes[doIndex + 1]
+            //     } index : You have to place "BEGIN" after 'DO'`
+            //   ); 
+            // } 
           } else{
             errorOccured = true;
               console.log(
@@ -650,56 +702,110 @@ const checkSyntax = (lexemsTable, index) => {
       }else{
         errorOccured = true;
         console.log(
-          `ERROR at ${lexemsIndexes[index]} index : You have to initialize iterator's value here`
+          `ERROR at ${lexemsIndexes[index + 2]} index : You have to initialize iterator's value here`
         );
       }
     }else{
       errorOccured = true;
       console.log(
-        `ERROR at ${lexemsIndexes[index]} index : You have to place iterator here`
+        `ERROR at ${lexemsIndexes[index + 1]} index : You have to place iterator here`
       );
     }
+  }
+  if (lexemsTable[index] === "T_THEN") {
+    errorOccured = true;
+    console.log(
+      `ERROR at ${lexemsIndexes[index]} index : You can't place 'THEN' here`
+    );
   }
 
   if(lexemsTable[index] === "T_IF"){
     ifAmount++;
-    if(lexemsTable[index + 1] === "T_LEFT_PARENTHESIS"){
-      const rightPr = findParenthesisRightPair(index + 1);
-      const contentBetweenIfAndThen = checkContentBetweenKeywords(index+1, rightPr, 2);
-      index = rightPr;
-      if(contentBetweenIfAndThen){
-        errorOccured = true;
-        console.log(contentBetweenIfAndThen)
-      }
-      if(lexemsTable[index + 1] === "T_THEN"){
-        if(lexemsTable[index + 2] === "T_BEGIN"){
-          index+=2
-        }else{
-          errorOccured = true;
-          console.log(
-            `ERROR at ${lexemsIndexes[index+2]} index : You have to place 'BEGIN' here`
-          );
-        }
-      }else{
-        errorOccured = true;
-        console.log(
-          `ERROR at ${lexemsIndexes[index+1]} index : You have to place 'THEN' here`
-        );
-      }
-    }else if (lexemsTable[index + 1] === "T_IF"){
+    if (lexemsTable[index + 1] === "T_IF"){
       errorOccured = true;
       console.log(
         `ERROR at ${lexemsIndexes[index+1]} index : You can't place another 'IF' here`
       );
     }
-    else{
+    const thenIndex = lexemsTable.indexOf("T_THEN", index);
+    if(thenIndex === -1 ){
       errorOccured = true;
       console.log(
-        `ERROR at ${lexemsIndexes[index+1]} index : You have to wrap your condition in parenthesis`
+        `ERROR at ${lexemsIndexes[index+1]} index : Expected 'THEN'`
       );
     }
+    if (lexemsTable[thenIndex + 1] === "T_SEMICOLUMN"){
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[thenIndex+1]} index : You can't place ; after then`
+      );
+    }
+    // console.log(thenIndex)
+    // console.log(index)
+    if(thenIndex - index === 1 ){
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index+1]} index : You have to write your condition`
+      );
+    }
+    if(lexemsTable[thenIndex - 1] === "T_SEMICOLUMN"){
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index+1]} index : Expected 'THEN' got ';'`
+      );
+    }
+    if(lexemsTable[thenIndex + 1] === "T_END"){
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[thenIndex+1]} index : Expected statement after 'THEN' got 'END'`
+      );
+    }
+    const contentBetweenIfAndThen = checkContentBetweenKeywords(index+1, thenIndex, 2);
+      // index = rightPr;
+      if(contentBetweenIfAndThen){
+        errorOccured = true;
+        console.log(contentBetweenIfAndThen)
+      }
+    // if(lexemsTable[index + 1] === "T_LEFT_PARENTHESIS"){
+    //   const rightPr = findParenthesisRightPair(index + 1);
+    //   const contentBetweenIfAndThen = checkContentBetweenKeywords(index+1, rightPr, 2);
+    //   index = rightPr;
+    //   if(contentBetweenIfAndThen){
+    //     errorOccured = true;
+    //     console.log(contentBetweenIfAndThen)
+    //   }
+    //   const thenIndex = lexemsTable.indexOf("T_THEN", index + 1);
+    //   if(lexemsTable[index + 1] === "T_THEN"){
+    //     // if(lexemsTable[index + 2] === "T_BEGIN"){
+    //     //   index+=2
+    //     // }else{
+    //     //   errorOccured = true;
+    //     //   console.log(
+    //     //     `ERROR at ${lexemsIndexes[index+2]} index : You have to place 'BEGIN' here`
+    //     //   );
+    //     // }
+    //   }else{
+    //     errorOccured = true;
+    //     console.log(
+    //       `ERROR at ${lexemsIndexes[index+1]} index : You have to place 'THEN' here`
+    //     );
+    //   }
+    // }
+    // else if (lexemsTable[index + 1] === "T_IF"){
+    //   errorOccured = true;
+    //   console.log(
+    //     `ERROR at ${lexemsIndexes[index+1]} index : You can't place another 'IF' here`
+    //   );
+    // }
+    // else{
+    //   errorOccured = true;
+    //   console.log(
+    //     `ERROR at ${lexemsIndexes[index+1]} index : You have to wrap your condition in parenthesis`
+    //   );
+    // }
     //! Check what's between if and then
     //? how to check if else is after the right end
+    index = thenIndex
   }
 
   if (lexemsTable[index] === "T_ELSE") {
@@ -744,11 +850,25 @@ const checkSyntax = (lexemsTable, index) => {
     }
   }
 
+  
   if (lexemsTable[index] === "T_TO") {
+    console.log({index})
     errorOccured = true;
     console.log(
       `ERROR at ${lexemsIndexes[index]} index : You can't place 'TO' here`
     );
+  }
+  if (lexemsTable[index] === "T_BEGIN") {
+    // console.log(`object`)
+    // console.log(lexemsTable[index+1])
+    if (lexemsTable[index+1] === "T_SEMICOLUMN") {
+      console.log(`object`)
+      errorOccured = true;
+      console.log(
+        `ERROR at ${lexemsIndexes[index+1]} index : You can't place ";" here`
+      );
+    }
+    
   }
   if (lexemsTable[index] === "T_DO") {
     errorOccured = true;
@@ -769,8 +889,26 @@ const checkSyntax = (lexemsTable, index) => {
   }
   if (!errorOccured && index > lexemsTable.length) {
     console.log(`\n~~~~~~~~~~Anylize completed successfully~~~~~~~~~~`);
+    buildTree();
   }
 };
+
+const buildTree = () => {
+  let tabs = 0
+  
+    for(let i= 0; i < lexemsTable.length; i++){
+      if(
+        lexemsTable[i] == "T_ELSE" ||
+        lexemsTable[i] == "T_FOR" ||
+        lexemsTable[i] == "T_THEN" ||
+        lexemsTable[i] == "T_IF" 
+      ){
+        console.log(`${" ".repeat(tabs*4)} ${lexemsTable[i]}`)
+        tabs++;
+      }
+    
+  }
+}
 
 const findClosestLeftIf = start => {
   let if_else_pairs = 1;
@@ -797,6 +935,7 @@ const findClosestThen = start => {
   }
   return 0
 }
+
 
 
 //!  find closest left if
@@ -831,7 +970,7 @@ const checkContentBetweenKeywords = (start, end, mode=0) => {
         lexemsTable[i] === "T_SEMICOLUMN"
       ) {
         return `
-        Prohibited symbols between ${keyword1}  and ${keyword2}, at lexems index ${lexemsIndexes[i]}
+        ERROR at index ${lexemsIndexes[i]} : Prohibited symbols between ${keyword1}  and ${keyword2}
         `;
       }
     }
